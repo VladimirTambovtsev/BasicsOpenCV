@@ -510,10 +510,9 @@ model = Sequential()
 model.add(Dense(4, input_dim=4, activation='relu'))     # 4 neurons, 1st layer
 model.add(Dense(8, activation='relu'))  # 8 neurons, 2nd layer
 model.add(Dense(1, activation='sigmoid'))   # 1 output neuron, 3rd layer, binary classification
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])   # back propagation
-model.fit(scaled_X_train, y_train, epochs=50, verbose=2)    # start learning
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])   # config learning
+model.fit(scaled_X_train, y_train, epochs=50, verbose=2)   # start learning with 50 steps back propagation
 
-# model.predict_classes(scaled_X_test)    # verify on real data
 
 from sklearn.metrics import confusion_matrix, classification_report     # evaluate the model: how good is it
 predictions = model.predict_classes(scaled_X_test)
@@ -528,3 +527,151 @@ newmodel.predict_classes(scaled_X_test)     # try imported model
 # ---
 
 
+# # mnist cnn with keras
+# from keras.datasets import mnist
+# (x_train, y_train), (x_test, y_test) = mnist.load_data()
+#
+# x_train.shape   #   60 000 images, 28x28
+# single_image = x_train[0]
+# plt.imshow(single_image, cmap='gray')
+# plt.show()
+#
+# from keras.utils.np_utils import to_categorical
+# y_cat_test = to_categorical(y_test, 10)
+# y_cat_train = to_categorical(y_train, 10)
+#
+# x_train = x_train / x_train.max()   # x / 255 - normalize color from 0-255 to 0-1
+# x_test = x_test / x_test.max()
+#
+# x_train = x_train.reshape(60000, 28, 28, 1)     # add color channel 0-1
+# x_test = x_test.reshape(10000, 28, 28, 1)
+#
+#
+# from keras.models import Sequential
+# from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D, Activation, BatchNormalization
+# # set model
+# model = Sequential()
+# model.add(Conv2D(filters=36,
+#                  kernel_size=(3, 3),
+#                  padding='same',
+#                  input_shape=(28, 28, 1),
+#                  activation='relu'))    # 1st layer, 36 neurons, convolutional
+# model.add(Conv2D(filters=36,
+#                  kernel_size=(3, 3),
+#                  padding='same',
+#                  activation='relu'))    # 2nd layer, 36 neurons, convolutional
+# model.add(MaxPooling2D(pool_size=(2, 2)))   # 3rd layer, pooling
+# model.add(Conv2D(filters=36,
+#                  kernel_size=(3, 3),
+#                  padding='same',
+#                  activation='relu'))    # 4th layer, 36 neurons, convolutional
+# model.add(Conv2D(filters=36,
+#                  kernel_size=(3, 3),
+#                  padding='same',
+#                  activation='relu'))    # 5th layer, 36 neurons, convolutional
+# model.add(MaxPooling2D(pool_size=(2, 2)))   # 6rd layer, pooling
+# model.add(Dropout(rate=0.25))    # 7th layer
+# model.add(Flatten())    # 8th layer, 2d image to 1d
+# model.add(Dense(units=512))     # 9th layer
+# model.add(BatchNormalization())     # 10th layer, normalization
+# model.add(Activation('relu'))   # 11th layer, ?
+# model.add(Dropout(rate=0.25))    # 12th layer
+# model.add(Dense(10, activation='softmax'))  # 13th layer, 10 neurons, final layer
+#
+# model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])  # config learning
+#
+#
+# from keras.preprocessing.image import ImageDataGenerator
+# datagen = ImageDataGenerator(
+#     featurewise_center=False,  # set input mean to 0 over the dataset
+#     samplewise_center=False,  # set each sample mean to 0
+#     featurewise_std_normalization=False,  # divide inputs by std of the dataset
+#     samplewise_std_normalization=False,  # divide each input by its std
+#     zca_whitening=False,  # apply ZCA whitening
+#     rotation_range=10,  # randomly rotate images in the range (degrees, 0 to 180)
+#     zoom_range=0.1,  # Randomly zoom image
+#     width_shift_range=0.1,  # randomly shift images horizontally (fraction of total width)
+#     height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
+#     horizontal_flip=False,  # randomly flip images
+#     vertical_flip=False)  # randomly flip images
+# datagen.fit(x_train)
+#
+#
+# # Decay learning rate
+# from keras.callbacks import ReduceLROnPlateau
+# learning_rate_reduction = ReduceLROnPlateau(monitor='val_acc',
+#                                             patience=3,
+#                                             verbose=1,
+#                                             factor=0.5,
+#                                             min_lr=0.00001)
+#
+# batch_size = 32
+# epochs = 2  # optimal is 10
+# train_history = model.fit_generator(datagen.flow(x_train, y_cat_train, batch_size=batch_size),
+#                                     epochs=epochs,
+#                                     verbose=2, steps_per_epoch=x_train.shape[0] # batch_size
+#                                     , callbacks=[learning_rate_reduction])
+#
+#
+#
+# #  Show CNN train history: 30 epochs
+# plt.plot(train_history.history['acc'])
+# plt.plot(train_history.history['val_acc'])
+# epoch_num = len(train_history.epoch)
+# final_epoch_train_acc = train_history.history['acc'][epoch_num - 1]
+# final_epoch_validation_acc = train_history.history['val_acc'][epoch_num - 1]
+# plt.text(epoch_num, final_epoch_train_acc, 'train = {:.3f}'.format(final_epoch_train_acc))
+# plt.text(epoch_num, final_epoch_validation_acc-0.01, 'valid = {:.3f}'.format(final_epoch_validation_acc))
+# plt.title('Train History')
+# plt.ylabel('accuracy')
+# plt.xlabel('Epoch')
+# plt.xlim(xmax=epoch_num+1)
+# plt.legend(['train', 'validation'], loc='upper left')
+# plt.show()
+#
+#
+# # Show top 6 prediction errors
+# def display_errors(errors_index, img_errors, pred_errors, obs_errors):
+#     """ This function shows 6 images with their predicted and real labels"""
+#     n = 0
+#     nrows = 2
+#     ncols = 3
+#     fig, ax = plt.subplots(nrows, ncols, sharex=True, sharey=True)
+#     for row in range(nrows):
+#         for col in range(ncols):
+#             error = errors_index[n]
+#             ax[row, col].imshow((img_errors[error]).reshape((28, 28)))
+#             ax[row, col].set_title("Predicted label :{}\nTrue label :{}".format(pred_errors[error], obs_errors[error]))
+#             n += 1
+#     plt.show()
+#
+#
+#
+# y_pred = model.predict(x_test)
+# y_pred_classes = np.argmax(y_pred, axis=1)
+# y_true = np.argmax(y_cat_test, axis=1)
+#
+# errors = (y_pred_classes - y_true != 0)
+# y_pred_classes_errors = y_pred_classes[errors]
+# y_pred_prob_errors = y_pred[errors]
+# y_true_classes_errors = y_true[errors]
+# x_validation_errors = x_test[errors]
+#
+# y_pred_maxProb_errors = np.max(y_pred_prob_errors, axis=1)
+# y_true_prob_errors = np.diagonal(np.take(y_pred_prob_errors, y_true_classes_errors, axis=1))
+# deltaProb_pred_true_errors = y_pred_maxProb_errors - y_true_prob_errors
+# sorted_delaProb_errors = np.argsort(deltaProb_pred_true_errors)
+#
+# # Top 6 errors
+# top6_errors = sorted_delaProb_errors[-6:]
+#
+# # Show the top 6 errors
+# display_errors(top6_errors, x_validation_errors, y_pred_classes_errors, y_true_classes_errors)
+#
+#
+#
+# model.evaluate(x_test, y_cat_test)
+#
+# from sklearn.metrics import classification_report   # evaluate the model
+# predictions = model.predict_classes(x_test)
+# print(classification_report(y_test, predictions))
